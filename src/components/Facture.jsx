@@ -106,18 +106,28 @@ function genererPDF(data, ventesIndex) {
   y += 8
 
   // ── TABLEAU DES ARTICLES ──────────────────────────────────────────────────
-  const lignes = (panier || []).map(item => [
-    item.nom || '',
-    String(item.qty || 0),
-    fmtMontant(item.prix_vente),
-    fmtMontant((item.prix_vente || 0) * (item.qty || 0)),
-  ])
+  // Forcer le formatage en STRING avant autoTable
+  const lignes = (panier || []).map(item => {
+    const pu    = Math.round(item.prix_vente || 0)
+    const qty   = Math.round(item.qty || 0)
+    const total = pu * qty
+    return [
+      String(item.nom || ''),
+      String(qty),
+      new Intl.NumberFormat('fr-FR').format(pu)    + ' FCFA',
+      new Intl.NumberFormat('fr-FR').format(total) + ' FCFA',
+    ]
+  })
 
   autoTable(doc, {
     startY: y,
     margin: { left: margeG, right: 20 },
     head: [['Désignation', 'Qté', 'Prix unitaire', 'Total']],
     body: lignes,
+    // Désactiver tout formatage automatique de jsPDF-autotable
+    didParseCell: function(data) {
+      data.cell.text = [String(data.cell.text)]
+    },
     styles: {
       fontSize: 10,
       cellPadding: { top: 4, bottom: 4, left: 4, right: 4 },
@@ -139,22 +149,19 @@ function genererPDF(data, ventesIndex) {
       3: { halign: 'right',  cellWidth: 42 },
     },
     alternateRowStyles: { fillColor: grisClair },
-    bodyStyles: { halign: 'left' },
-    didDrawPage: () => {},
   })
 
   // ── BLOC TOTAL ────────────────────────────────────────────────────────────
   const finalY = doc.lastAutoTable.finalY + 8
+  const totalStr = new Intl.NumberFormat('fr-FR').format(Math.round(montant_total || 0)) + ' FCFA'
 
-  // Fond total
   doc.setFillColor(...bleu)
   doc.roundedRect(pageW - 20 - 90, finalY, 90, 16, 3, 3, 'F')
-
   doc.setTextColor(...blanc)
   doc.setFontSize(12)
   doc.setFont('helvetica', 'bold')
   doc.text('TOTAL :', pageW - 20 - 88 + 4, finalY + 10)
-  doc.text(fmtMontant(montant_total), margeD - 2, finalY + 10, { align: 'right' })
+  doc.text(totalStr, margeD - 2, finalY + 10, { align: 'right' })
 
   // ── MESSAGE DE REMERCIEMENT ───────────────────────────────────────────────
   const yMerci = finalY + 28
