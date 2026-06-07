@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { sb } from '../supabase'
+import ClientForm from '../components/ClientForm'
 
 const C = {
   pri:'#2563EB', priL:'#EFF6FF',
@@ -83,6 +84,17 @@ export default function Clients({ eid, showToast }) {
   const [form, setForm] = useState(EMPTY_CLIENT)
 
   useEffect(() => { if (eid) load() }, [eid])
+
+  // ── Handlers stables pour ClientForm ─────────────────────────────────────
+  const handleFormChange = useCallback((key, value) => {
+    setForm(f => ({ ...f, [key]: value }))
+  }, [])
+
+  const handleCancel = useCallback(() => {
+    setShowAdd(false)
+    setEditClient(null)
+    setForm(EMPTY_CLIENT)
+  }, [])
 
   // ── CRUD ──────────────────────────────────────────────────────────────────
   async function load() {
@@ -246,15 +258,15 @@ export default function Clients({ eid, showToast }) {
 
       {/* Modal AJOUT */}
       {showAdd && (
-        <Modal title="➕ Nouveau client" onClose={() => { setShowAdd(false); setForm(EMPTY_CLIENT) }}>
-          <ClientForm onSubmit={createClient} submitLabel="Enregistrer le client" />
+        <Modal title="➕ Nouveau client" onClose={handleCancel}>
+          <ClientForm form={form} onChange={handleFormChange} onSubmit={createClient} onCancel={handleCancel} saving={saving} />
         </Modal>
       )}
 
       {/* Modal MODIFICATION */}
       {editClient && (
-        <Modal title={`✏️ Modifier — ${editClient.nom}`} onClose={() => { setEditClient(null); setForm(EMPTY_CLIENT) }}>
-          <ClientForm onSubmit={updateClient} submitLabel="Enregistrer les modifications" />
+        <Modal title={`✏️ Modifier — ${editClient.nom}`} onClose={handleCancel}>
+          <ClientForm form={form} onChange={handleFormChange} onSubmit={updateClient} onCancel={handleCancel} saving={saving} />
         </Modal>
       )}
 

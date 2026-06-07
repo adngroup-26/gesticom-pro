@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { sb } from '../supabase'
 import MouvementModal from '../components/MouvementModal'
 import AlertesStock   from '../components/AlertesStock'
+import ProduitForm    from '../components/ProduitForm'
 
 const C = {
   pri:'#2563EB', priL:'#EFF6FF',
@@ -106,6 +107,17 @@ export default function Stock({ eid, profil, showToast, isAdm }) {
   }
 
   function reloadAll() { loadProds(); loadMouvements(); loadNbAlertes() }
+
+  // ── Handler stable pour ProduitForm ──────────────────────────────────────
+  const handleFormChange = useCallback((key, value) => {
+    setForm(f => ({ ...f, [key]: value }))
+  }, [])
+
+  const handleCancel = useCallback(() => {
+    setShowAdd(false)
+    setEditProduit(null)
+    setForm(EMPTY_PRODUIT)
+  }, [])
 
   // ── Prix de revient ───────────────────────────────────────────────────────
   const prCalc = () => {
@@ -374,13 +386,13 @@ export default function Stock({ eid, profil, showToast, isAdm }) {
 
       {/* Modals */}
       {showAdd && (
-        <Modal title="➕ Nouveau produit" onClose={() => { setShowAdd(false); setForm(EMPTY_PRODUIT) }} wide>
-          <ProduitForm onSubmit={createProduit} submitLabel="Enregistrer le produit" />
+        <Modal title="➕ Nouveau produit" onClose={handleCancel} wide>
+          <ProduitForm form={form} onChange={handleFormChange} onSubmit={createProduit} onCancel={handleCancel} saving={saving} />
         </Modal>
       )}
       {editProduit && (
-        <Modal title={`✏️ Modifier — ${editProduit.nom}`} onClose={() => { setEditProduit(null); setForm(EMPTY_PRODUIT) }} wide>
-          <ProduitForm onSubmit={updateProduit} submitLabel="Enregistrer les modifications" />
+        <Modal title={`✏️ Modifier — ${editProduit.nom}`} onClose={handleCancel} wide>
+          <ProduitForm form={form} onChange={handleFormChange} onSubmit={updateProduit} onCancel={handleCancel} saving={saving} />
         </Modal>
       )}
       {deleteTarget && (
