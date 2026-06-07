@@ -5,10 +5,26 @@ import autoTable from 'jspdf-autotable'
 
 const C = { pri:'#2563EB', priL:'#EFF6FF', ok:'#16A34A', g200:'#E5E7EB', g500:'#6B7280', g800:'#1F2937' }
 
-// ── Formatage des montants ────────────────────────────────────────────────────
+// ── Formatage montants pour l'INTERFACE (affichage normal) ───────────────────
 function fmtMontant(n) {
   return new Intl.NumberFormat('fr-FR').format(Math.round(n || 0)) + ' FCFA'
 }
+
+// ── Formatage montants pour le PDF (espaces ASCII purs, sans Unicode) ────────
+function fmtMontantPDF(n) {
+  const formatted = new Intl.NumberFormat('fr-FR')
+    .format(Math.round(n || 0))
+    .replace(/\u202F/g, ' ')  // espace fine insécable → espace ASCII
+    .replace(/\u00A0/g, ' ')  // espace insécable      → espace ASCII
+    .replace(/\s/g, ' ')      // tout autre whitespace → espace ASCII
+  return formatted + ' FCFA'
+}
+
+// ── Debug : vérifier les codes de caractères (à retirer après validation) ────
+console.log(
+  'Codes caractères fmtMontantPDF(9499):',
+  [...fmtMontantPDF(9499)].map(c => ({ char: c, code: c.charCodeAt(0) }))
+)
 
 // ── Numéro de facture séquentiel ─────────────────────────────────────────────
 function fmtNumero(index) {
@@ -24,28 +40,27 @@ function fmtDate(dateStr) {
 // ── Générateur PDF professionnel ──────────────────────────────────────────────
 function genererPDF(data, ventesIndex) {
   const {
-    id, client_nom, montant_total, created_at,
-    panier, entreprise_nom, entreprise_adresse,
-    entreprise_tel
+    client_nom, montant_total, created_at,
+    panier, entreprise_nom, entreprise_adresse, entreprise_tel
   } = data
 
-  const doc = new jsPDF({ unit: 'mm', format: 'a4' })
+  const doc   = new jsPDF({ unit: 'mm', format: 'a4' })
   const pageW = doc.internal.pageSize.getWidth()
+  const pageH = doc.internal.pageSize.getHeight()
   const margeG = 20
   const margeD = pageW - 20
 
-  // ── Couleurs ──────────────────────────────────────────────────────────────
-  const bleu  = [37, 99, 235]
-  const blanc = [255, 255, 255]
-  const gris  = [100, 116, 139]
-  const noir  = [31, 41, 55]
+  const bleu      = [37, 99, 235]
+  const blanc     = [255, 255, 255]
+  const gris      = [100, 116, 139]
+  const noir      = [31, 41, 55]
   const grisClair = [248, 250, 252]
 
-  // ── EN-TÊTE : bandeau bleu ────────────────────────────────────────────────
+  // ── EN-TÊTE ───────────────────────────────────────────────────────────────
   doc.setFillColor(...bleu)
   doc.rect(0, 0, pageW, 42, 'F')
 
-  // Logo G
+  // Logo
   doc.setFillColor(...blanc)
   doc.roundedRect(margeG, 8, 20, 20, 3, 3, 'F')
   doc.setTextColor(...bleu)
@@ -53,34 +68,31 @@ function genererPDF(data, ventesIndex) {
   doc.setFont('helvetica', 'bold')
   doc.text('G', margeG + 10, 21, { align: 'center' })
 
-  // Nom application
+  // Titre
   doc.setTextColor(...blanc)
   doc.setFontSize(22)
   doc.setFont('helvetica', 'bold')
   doc.text('GESTICOM PRO', margeG + 26, 16)
-
-  // Slogan
   doc.setFontSize(9)
   doc.setFont('helvetica', 'normal')
   doc.text('Gestion commerciale · Afrique francophone', margeG + 26, 23)
 
-  // Mention FACTURE / REÇU à droite
+  // Mention facture
   doc.setFontSize(13)
   doc.setFont('helvetica', 'bold')
-  doc.text('FACTURE / REÇU', margeD, 16, { align: 'right' })
+  doc.text('FACTURE / RECU', margeD, 16, { align: 'right' })
 
-  // ── INFOS ENTREPRISE (sous le bandeau gauche) ─────────────────────────────
+  // ── INFOS ENTREPRISE (gauche) ─────────────────────────────────────────────
   let y = 54
   doc.setTextColor(...noir)
   doc.setFontSize(12)
   doc.setFont('helvetica', 'bold')
   doc.text(entreprise_nom || 'Mon Entreprise', margeG, y)
-
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(9)
   doc.setTextColor(...gris)
   if (entreprise_adresse) { y += 5; doc.text(entreprise_adresse, margeG, y) }
-  if (entreprise_tel)     { y += 5; doc.text('Tél : ' + entreprise_tel, margeG, y) }
+  if (entreprise_tel)     { y += 5; doc.text('Tel : ' + entreprise_tel, margeG, y) }
 
   // ── INFOS FACTURE (droite) ────────────────────────────────────────────────
   const yInfo = 54
@@ -98,15 +110,14 @@ function genererPDF(data, ventesIndex) {
   doc.text(fmtDate(created_at), margeD, yInfo + 7, { align: 'right' })
   doc.text(client_nom || 'Client direct', margeD, yInfo + 14, { align: 'right' })
 
-  // ── LIGNE SÉPARATRICE ─────────────────────────────────────────────────────
+  // ── SÉPARATEUR ────────────────────────────────────────────────────────────
   y = Math.max(y, yInfo + 14) + 10
   doc.setDrawColor(...bleu)
   doc.setLineWidth(0.5)
   doc.line(margeG, y, margeD, y)
   y += 8
 
-  // ── TABLEAU DES ARTICLES ──────────────────────────────────────────────────
-  // Forcer le formatage en STRING avant autoTable
+  // ── TABLEAU ARTICLES — toutes les valeurs en STRING ASCII pure ────────────
   const lignes = (panier || []).map(item => {
     const pu    = Math.round(item.prix_vente || 0)
     const qty   = Math.round(item.qty || 0)
@@ -114,19 +125,26 @@ function genererPDF(data, ventesIndex) {
     return [
       String(item.nom || ''),
       String(qty),
-      new Intl.NumberFormat('fr-FR').format(pu)    + ' FCFA',
-      new Intl.NumberFormat('fr-FR').format(total) + ' FCFA',
+      fmtMontantPDF(pu),
+      fmtMontantPDF(total),
     ]
   })
 
   autoTable(doc, {
     startY: y,
     margin: { left: margeG, right: 20 },
-    head: [['Désignation', 'Qté', 'Prix unitaire', 'Total']],
+    head: [['Designation', 'Qte', 'Prix unitaire', 'Total']],
     body: lignes,
-    // Désactiver tout formatage automatique de jsPDF-autotable
     didParseCell: function(data) {
-      data.cell.text = [String(data.cell.text)]
+      // Forcer chaque cellule en string ASCII pure
+      if (Array.isArray(data.cell.text)) {
+        data.cell.text = data.cell.text.map(t =>
+          String(t)
+            .replace(/\u202F/g, ' ')
+            .replace(/\u00A0/g, ' ')
+            .replace(/\s/g, ' ')
+        )
+      }
     },
     styles: {
       fontSize: 10,
@@ -134,6 +152,7 @@ function genererPDF(data, ventesIndex) {
       textColor: noir,
       lineColor: [226, 232, 240],
       lineWidth: 0.3,
+      font: 'helvetica',
     },
     headStyles: {
       fillColor: bleu,
@@ -151,27 +170,26 @@ function genererPDF(data, ventesIndex) {
     alternateRowStyles: { fillColor: grisClair },
   })
 
-  // ── BLOC TOTAL ────────────────────────────────────────────────────────────
-  const finalY = doc.lastAutoTable.finalY + 8
-  const totalStr = new Intl.NumberFormat('fr-FR').format(Math.round(montant_total || 0)) + ' FCFA'
+  // ── TOTAL ─────────────────────────────────────────────────────────────────
+  const finalY   = doc.lastAutoTable.finalY + 8
+  const totalStr = fmtMontantPDF(montant_total)
 
   doc.setFillColor(...bleu)
   doc.roundedRect(pageW - 20 - 90, finalY, 90, 16, 3, 3, 'F')
   doc.setTextColor(...blanc)
   doc.setFontSize(12)
   doc.setFont('helvetica', 'bold')
-  doc.text('TOTAL :', pageW - 20 - 88 + 4, finalY + 10)
+  doc.text('TOTAL :', pageW - 110, finalY + 10)
   doc.text(totalStr, margeD - 2, finalY + 10, { align: 'right' })
 
-  // ── MESSAGE DE REMERCIEMENT ───────────────────────────────────────────────
+  // ── REMERCIEMENT ──────────────────────────────────────────────────────────
   const yMerci = finalY + 28
   doc.setTextColor(...gris)
   doc.setFontSize(10)
   doc.setFont('helvetica', 'italic')
-  doc.text('Merci pour votre achat. Ce reçu fait office de facture.', pageW / 2, yMerci, { align: 'center' })
+  doc.text('Merci pour votre achat. Ce recu fait office de facture.', pageW / 2, yMerci, { align: 'center' })
 
   // ── PIED DE PAGE ──────────────────────────────────────────────────────────
-  const pageH = doc.internal.pageSize.getHeight()
   doc.setFillColor(...bleu)
   doc.rect(0, pageH - 18, pageW, 18, 'F')
   doc.setTextColor(...blanc)
@@ -179,11 +197,10 @@ function genererPDF(data, ventesIndex) {
   doc.setFont('helvetica', 'normal')
   doc.text('GestiCom Pro — Gestion commerciale Afrique francophone', pageW / 2, pageH - 8, { align: 'center' })
 
-  // ── SAUVEGARDE ────────────────────────────────────────────────────────────
   doc.save('facture-' + fmtNumero(ventesIndex || 0) + '.pdf')
 }
 
-// ── Composant Facture ────────────────────────────────────────────────────────
+// ── Composant React ───────────────────────────────────────────────────────────
 export default function Facture({ data, onClose, showToast }) {
   const [ventesIndex, setVentesIndex] = useState(0)
 
@@ -196,33 +213,32 @@ export default function Facture({ data, onClose, showToast }) {
           .eq('entreprise_id', data.entreprise_id)
           .lte('created_at', data.created_at)
         setVentesIndex((count || 1) - 1)
-      } catch(e) {
-        setVentesIndex(0)
-      }
+      } catch(e) { setVentesIndex(0) }
     }
     if (data?.created_at) fetchIndex()
   }, [data])
 
   function handlePDF() {
     genererPDF(data, ventesIndex)
-    showToast('Facture PDF téléchargée !')
+    showToast('Facture PDF telechargee !')
   }
 
   function handleWhatsApp() {
-    const lignes = (data.panier || []).map(item =>
-      item.nom + ' x' + item.qty + ' = ' + fmtMontant((item.prix_vente || 0) * (item.qty || 0))
-    ).join('\n')
+    const lignes = (data.panier || []).map(item => {
+      const total = Math.round((item.prix_vente || 0) * (item.qty || 0))
+      return item.nom + ' x' + item.qty + ' = ' + fmtMontantPDF(total)
+    }).join('\n')
 
     const msg = encodeURIComponent(
       '*' + (data.entreprise_nom || 'GestiCom Pro') + '*\n' +
-      'FACTURE / REÇU\n\n' +
-      'N° : ' + fmtNumero(ventesIndex) + '\n' +
+      'FACTURE / RECU\n\n' +
+      'N : ' + fmtNumero(ventesIndex) + '\n' +
       'Date : ' + fmtDate(data.created_at) + '\n' +
       'Client : ' + (data.client_nom || 'Client direct') + '\n\n' +
-      '――――――――――――――――――\n' +
+      '----------------------------\n' +
       lignes + '\n' +
-      '――――――――――――――――――\n' +
-      '*TOTAL : ' + fmtMontant(data.montant_total) + '*\n\n' +
+      '----------------------------\n' +
+      '*TOTAL : ' + fmtMontantPDF(data.montant_total) + '*\n\n' +
       'Merci pour votre achat !'
     )
     window.open('https://wa.me/?text=' + msg, '_blank')
@@ -234,7 +250,7 @@ export default function Facture({ data, onClose, showToast }) {
       <div style={{ background:'#fff', borderRadius:16, padding:32, width:480, maxWidth:'92vw', maxHeight:'90vh', overflowY:'auto' }}>
 
         {/* En-tête aperçu */}
-        <div style={{ background:`linear-gradient(135deg, #1D4ED8, #2563EB)`, borderRadius:12, padding:20, marginBottom:20, color:'#fff', textAlign:'center' }}>
+        <div style={{ background:'linear-gradient(135deg,#1D4ED8,#2563EB)', borderRadius:12, padding:20, marginBottom:20, color:'#fff', textAlign:'center' }}>
           <div style={{ fontWeight:800, fontSize:22, letterSpacing:1 }}>GESTICOM PRO</div>
           <div style={{ fontSize:11, opacity:0.8, marginTop:2 }}>Gestion commerciale · Afrique francophone</div>
           <div style={{ marginTop:10, fontSize:13, fontWeight:600, background:'rgba(255,255,255,0.2)', borderRadius:20, padding:'4px 16px', display:'inline-block' }}>
@@ -242,7 +258,7 @@ export default function Facture({ data, onClose, showToast }) {
           </div>
         </div>
 
-        {/* Infos facture */}
+        {/* Infos */}
         <div style={{ background:'#F8FAFC', borderRadius:10, padding:'14px 16px', marginBottom:16 }}>
           {[
             ['N° Facture', fmtNumero(ventesIndex)],
@@ -261,19 +277,19 @@ export default function Facture({ data, onClose, showToast }) {
         <table style={{ width:'100%', borderCollapse:'collapse', fontSize:13, marginBottom:16 }}>
           <thead>
             <tr style={{ background:'#2563EB', color:'#fff' }}>
-              <th style={{ padding:'8px 10px', textAlign:'left', borderRadius:'6px 0 0 0' }}>Désignation</th>
-              <th style={{ padding:'8px 6px', textAlign:'center' }}>Qté</th>
+              <th style={{ padding:'8px 10px', textAlign:'left' }}>Désignation</th>
+              <th style={{ padding:'8px 6px',  textAlign:'center' }}>Qté</th>
               <th style={{ padding:'8px 10px', textAlign:'right' }}>Prix unit.</th>
-              <th style={{ padding:'8px 10px', textAlign:'right', borderRadius:'0 6px 0 0' }}>Total</th>
+              <th style={{ padding:'8px 10px', textAlign:'right' }}>Total</th>
             </tr>
           </thead>
           <tbody>
             {(data.panier || []).map((item, i) => (
               <tr key={item.id || i} style={{ background: i % 2 === 0 ? '#fff' : '#F8FAFC' }}>
                 <td style={{ padding:'8px 10px', borderBottom:'1px solid #E5E7EB' }}>{item.nom}</td>
-                <td style={{ padding:'8px 6px', textAlign:'center', borderBottom:'1px solid #E5E7EB' }}>{item.qty}</td>
-                <td style={{ padding:'8px 10px', textAlign:'right', borderBottom:'1px solid #E5E7EB' }}>{fmtMontant(item.prix_vente)}</td>
-                <td style={{ padding:'8px 10px', textAlign:'right', borderBottom:'1px solid #E5E7EB', fontWeight:600 }}>{fmtMontant((item.prix_vente || 0) * (item.qty || 0))}</td>
+                <td style={{ padding:'8px 6px',  borderBottom:'1px solid #E5E7EB', textAlign:'center' }}>{item.qty}</td>
+                <td style={{ padding:'8px 10px', borderBottom:'1px solid #E5E7EB', textAlign:'right' }}>{fmtMontant(item.prix_vente)}</td>
+                <td style={{ padding:'8px 10px', borderBottom:'1px solid #E5E7EB', textAlign:'right', fontWeight:600 }}>{fmtMontant((item.prix_vente||0)*(item.qty||0))}</td>
               </tr>
             ))}
           </tbody>
