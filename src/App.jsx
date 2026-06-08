@@ -66,13 +66,14 @@ export default function App() {
   const role  = profil?.role || 'caissier'
   const isAdm = role === 'admin'
   const isGer = role === 'gerant' || isAdm
+  const isCai = role === 'caissier' || isGer
   const eid   = profil?.entreprise_id
 
   const pages = {
     dashboard:  <Dashboard eid={eid} showToast={showToast} />,
     vente:      <Vente eid={eid} profil={profil} showToast={showToast} />,
-    stock:      <Stock eid={eid} profil={profil} showToast={showToast} isAdm={isAdm} />,
-    clients:    <Clients eid={eid} showToast={showToast} />,
+    stock:      <Stock eid={eid} profil={profil} showToast={showToast} isAdm={isAdm} isGer={isGer} />,
+    clients:    <Clients eid={eid} showToast={showToast} isAdm={isAdm} />,
     historique: <Historique eid={eid} showToast={showToast} />,
     rapports:   <Rapports eid={eid} />,
     users:      <Utilisateurs eid={eid} showToast={showToast} />,

@@ -34,6 +34,20 @@ function Field({ label, value, onChange, type = 'text', placeholder }) {
   )
 }
 
+function Modal({ title, children, onClose }) {
+  return (
+    <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', zIndex:500, display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}>
+      <div style={{ background:'#fff', borderRadius:16, padding:28, width:420, maxWidth:'100%', maxHeight:'90vh', overflowY:'auto', boxShadow:'0 24px 60px rgba(0,0,0,0.2)' }}>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
+          <div style={{ fontWeight:700, fontSize:18, color:C.g800 }}>{title}</div>
+          <button onClick={onClose} style={{ background:'none', border:'none', fontSize:20, cursor:'pointer', color:C.g500, lineHeight:1 }}>✕</button>
+        </div>
+        {children}
+      </div>
+    </div>
+  )
+}
+
 function ConfirmModal({ message, onConfirm, onCancel }) {
   return (
     <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', zIndex:600, display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}>
@@ -56,7 +70,7 @@ function ConfirmModal({ message, onConfirm, onCancel }) {
 }
 
 // ── Page Clients ──────────────────────────────────────────────────────────────
-export default function Clients({ eid, showToast }) {
+export default function Clients({ eid, showToast, isAdm }) {
   const [clis,    setClis]    = useState([])
   const [loading, setLoading] = useState(true)
   const [saving,  setSaving]  = useState(false)
@@ -154,6 +168,29 @@ export default function Clients({ eid, showToast }) {
     c.telephone?.includes(search)
   )
 
+  // ── Formulaire partagé ────────────────────────────────────────────────────
+  function ClientForm({ onSubmit, submitLabel }) {
+    return (
+      <>
+        <Field label="Nom complet *"  value={form.nom}     onChange={set('nom')}     placeholder="Ex: Kouassi Julien" />
+        <Field label="Téléphone"      value={form.tel}     onChange={set('tel')}     placeholder="+225 07 XX XX XX" type="tel" />
+        <Field label="Adresse"        value={form.adresse} onChange={set('adresse')} placeholder="Quartier, Ville" />
+        <Field label="Email"          value={form.email}   onChange={set('email')}   placeholder="client@email.com" type="email" />
+        <div style={{ display:'flex', gap:10, marginTop:8 }}>
+          <button
+            onClick={() => { setShowAdd(false); setEditClient(null); setForm(EMPTY_CLIENT) }}
+            style={{ flex:1, padding:11, borderRadius:10, border:`1px solid ${C.g200}`, background:'#fff', cursor:'pointer', fontWeight:600, fontSize:14 }}>
+            Annuler
+          </button>
+          <button onClick={onSubmit} disabled={saving}
+            style={{ flex:1, padding:11, borderRadius:10, border:'none', background:C.pri, color:'#fff', cursor:saving?'not-allowed':'pointer', fontWeight:700, fontSize:14, opacity:saving?0.7:1 }}>
+            {saving ? 'Enregistrement…' : submitLabel}
+          </button>
+        </div>
+      </>
+    )
+  }
+
   // ── Rendu ─────────────────────────────────────────────────────────────────
   return (
     <div style={{ padding:24 }}>
@@ -181,18 +218,16 @@ export default function Clients({ eid, showToast }) {
 
               {/* Boutons action */}
               <div style={{ position:'absolute', top:14, right:14, display:'flex', gap:6 }}>
-                <button
-                  onClick={() => openEdit(c)}
-                  title="Modifier"
+                <button onClick={() => openEdit(c)} title="Modifier"
                   style={{ width:32, height:32, borderRadius:8, border:`1px solid ${C.g200}`, background:C.priL, color:C.pri, cursor:'pointer', fontSize:15, display:'flex', alignItems:'center', justifyContent:'center' }}>
                   ✏️
                 </button>
-                <button
-                  onClick={() => setDeleteTarget(c)}
-                  title="Supprimer"
-                  style={{ width:32, height:32, borderRadius:8, border:`1px solid #FCA5A5`, background:C.errL, color:C.err, cursor:'pointer', fontSize:15, display:'flex', alignItems:'center', justifyContent:'center' }}>
-                  🗑️
-                </button>
+                {isAdm && (
+                  <button onClick={() => setDeleteTarget(c)} title="Supprimer"
+                    style={{ width:32, height:32, borderRadius:8, border:`1px solid #FCA5A5`, background:C.errL, color:C.err, cursor:'pointer', fontSize:15, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                    🗑️
+                  </button>
+                )}
               </div>
 
               {/* Infos client */}

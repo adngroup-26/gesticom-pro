@@ -29,9 +29,8 @@ const Field = memo(function Field({ label, value, onChange, type = 'text', place
   )
 })
 
-// ── ProduitForm — composant EXTERNE et stable ─────────────────────────────────
-// Défini HORS de tout autre composant → jamais remounté par un re-render parent
-const ProduitForm = memo(function ProduitForm({ form, onChange, onSubmit, onCancel, saving }) {
+// ── ProduitForm — sans memo() car form change à chaque frappe ────────────────
+function ProduitForm({ form, onChange, onSubmit, onCancel, saving }) {
   // Recalcul à chaque changement de form (pa, tr, qt, pv)
   const pa = parseFloat(form.pa) || 0
   const tr = parseFloat(form.tr) || 0
@@ -96,6 +95,6 @@ const ProduitForm = memo(function ProduitForm({ form, onChange, onSubmit, onCanc
       </div>
     </>
   )
-})
+}
 
 export default ProduitForm
