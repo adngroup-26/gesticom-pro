@@ -170,52 +170,6 @@ export default function Stock({ eid, profil, showToast, isAdm }) {
     ? mouvements
     : mouvements.filter(m => m.type === filtreType)
 
-  // ── Formulaire produit ────────────────────────────────────────────────────
-  function ProduitForm({ onSubmit, submitLabel }) {
-    const pr = prCalc()
-    return (
-      <>
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
-          <div style={{ gridColumn:'1/-1' }}>
-            <Field label="Désignation" value={form.nom} onChange={set('nom')} placeholder="Ex: Ciment CFA 50kg" required />
-          </div>
-          <Field label="Référence"  value={form.ref} onChange={set('ref')} placeholder="Ex: CIM-001" />
-          <Field label="Catégorie"  value={form.cat} onChange={set('cat')} placeholder="Ex: Matériaux" />
-          <Field label="Prix d'achat unitaire (FCFA)" type="number" value={form.pa} onChange={set('pa')} placeholder="0" />
-          <Field label="Montant transport (FCFA)"     type="number" value={form.tr} onChange={set('tr')} placeholder="0" />
-          <Field label="Qté totale achetée"           type="number" value={form.qt} onChange={set('qt')} placeholder="0" />
-          <Field label="Seuil d'alerte stock"         type="number" value={form.al} onChange={set('al')} placeholder="10" />
-        </div>
-        <div style={{ background:C.priL, border:`1px solid #93C5FD`, borderRadius:9, padding:'12px 14px', margin:'4px 0 12px' }}>
-          <div style={{ fontSize:12, color:C.pri, fontWeight:600 }}>Prix de revient (calculé)</div>
-          <div style={{ fontSize:20, fontWeight:800, color:C.pri, marginTop:3 }}>
-            {form.qt && parseFloat(form.qt) > 0 ? fmtNum(Math.round(pr)) + ' FCFA' : '—'}
-          </div>
-          <div style={{ fontSize:11, color:C.g500, marginTop:2 }}>PR = Prix achat + Transport ÷ Qté</div>
-        </div>
-        <Field label="Prix de vente (FCFA)" type="number" value={form.pv} onChange={set('pv')} placeholder="0" required />
-        {form.pv && parseFloat(form.pv) > 0 && pr > 0 && (
-          <div style={{ background:C.okL, border:`1px solid #86EFAC`, borderRadius:9, padding:'10px 14px', marginBottom:12 }}>
-            <div style={{ fontSize:12, color:C.ok, fontWeight:600 }}>Marge bénéficiaire</div>
-            <div style={{ fontSize:16, fontWeight:700, color:C.ok, marginTop:2 }}>
-              {Math.round(((parseFloat(form.pv)-pr)/pr)*100)}% · {fmtNum(Math.round(parseFloat(form.pv)-pr))} FCFA/unité
-            </div>
-          </div>
-        )}
-        <div style={{ display:'flex', gap:10, marginTop:8 }}>
-          <button onClick={() => { setShowAdd(false); setEditProduit(null); setForm(EMPTY_PRODUIT) }}
-            style={{ flex:1, padding:11, borderRadius:10, border:`1px solid ${C.g200}`, background:'#fff', cursor:'pointer', fontWeight:600, fontSize:14 }}>
-            Annuler
-          </button>
-          <button onClick={onSubmit} disabled={saving}
-            style={{ flex:1, padding:11, borderRadius:10, border:'none', background:C.pri, color:'#fff', cursor:saving?'not-allowed':'pointer', fontWeight:700, fontSize:14, opacity:saving?0.7:1 }}>
-            {saving ? 'Enregistrement…' : submitLabel}
-          </button>
-        </div>
-      </>
-    )
-  }
-
   // ── Rendu ─────────────────────────────────────────────────────────────────
   const ONGLETS = [
     { id:'produits',   label:'📦 Produits',          badge: null },
