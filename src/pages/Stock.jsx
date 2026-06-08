@@ -16,30 +16,13 @@ const C = {
 
 const fmt    = n => new Intl.NumberFormat('fr-FR').format(n || 0) + ' FCFA'
 const fmtNum = n => new Intl.NumberFormat('fr-FR').format(n || 0)
-
 const EMPTY_PRODUIT = { nom:'', ref:'', cat:'', pa:'', tr:'', qt:'', pv:'', al:'10' }
 
 const MVT_COLORS = {
-  entree:     { color:C.ok,  bg:C.okL,  label:'📥 Entrée',     sign:'+' },
-  sortie:     { color:C.err, bg:C.errL, label:'📤 Sortie',      sign:'-' },
-  inventaire: { color:C.pri, bg:C.priL, label:'📋 Inventaire',  sign:'=' },
-  transfert:  { color:C.war, bg:C.warL, label:'🔄 Transfert',   sign:'-' },
-}
-
-// ── UI atoms ──────────────────────────────────────────────────────────────────
-function Field({ label, value, onChange, type='text', placeholder, required }) {
-  return (
-    <div style={{ marginBottom:12 }}>
-      <label style={{ fontSize:13, color:C.g600, fontWeight:500, display:'block', marginBottom:4 }}>
-        {label}{required && <span style={{ color:C.err }}> *</span>}
-      </label>
-      <input type={type} value={value} onChange={onChange} placeholder={placeholder||''}
-        style={{ width:'100%', padding:'9px 12px', borderRadius:8, border:`1.5px solid ${C.g200}`, fontSize:14, outline:'none' }}
-        onFocus={e=>e.target.style.borderColor=C.pri}
-        onBlur={e=>e.target.style.borderColor=C.g200}
-      />
-    </div>
-  )
+  entree:     { color:C.ok,  bg:C.okL,  label:'📥 Entrée',    sign:'+' },
+  sortie:     { color:C.err, bg:C.errL, label:'📤 Sortie',     sign:'-' },
+  inventaire: { color:C.pri, bg:C.priL, label:'📋 Inventaire', sign:'=' },
+  transfert:  { color:C.war, bg:C.warL, label:'🔄 Transfert',  sign:'-' },
 }
 
 function ConfirmModal({ message, onConfirm, onCancel }) {
@@ -57,9 +40,8 @@ function ConfirmModal({ message, onConfirm, onCancel }) {
   )
 }
 
-// ── Page Stock ────────────────────────────────────────────────────────────────
 export default function Stock({ eid, profil, showToast, isAdm, isGer }) {
-  const [onglet,       setOnglet]       = useState('produits') // produits | mouvements | alertes
+  const [onglet,       setOnglet]       = useState('produits')
   const [prods,        setProds]        = useState([])
   const [mouvements,   setMouvements]   = useState([])
   const [loading,      setLoading]      = useState(true)
@@ -75,7 +57,6 @@ export default function Stock({ eid, profil, showToast, isAdm, isGer }) {
 
   useEffect(() => { if (eid) { loadProds(); loadMouvements(); loadNbAlertes() } }, [eid])
 
-  // ── Chargements ───────────────────────────────────────────────────────────
   async function loadProds() {
     setLoading(true)
     const { data } = await sb.from('produits').select('*').eq('entreprise_id', eid).order('nom')
@@ -95,7 +76,6 @@ export default function Stock({ eid, profil, showToast, isAdm, isGer }) {
 
   function reloadAll() { loadProds(); loadMouvements(); loadNbAlertes() }
 
-  // ── Handler stable pour ProduitForm ──────────────────────────────────────
   const handleFormChange = useCallback((key, value) => {
     setForm(f => ({ ...f, [key]: value }))
   }, [])
@@ -106,15 +86,6 @@ export default function Stock({ eid, profil, showToast, isAdm, isGer }) {
     setForm(EMPTY_PRODUIT)
   }, [])
 
-  // ── Prix de revient ───────────────────────────────────────────────────────
-  const prCalc = () => {
-    const pa = parseFloat(form.pa) || 0
-    const tr = parseFloat(form.tr) || 0
-    const qt = parseFloat(form.qt) || 1
-    return pa + tr / qt
-  }
-
-  // ── CRUD Produits ─────────────────────────────────────────────────────────
   async function createProduit() {
     if (!form.nom.trim() || saving) return
     setSaving(true)
@@ -157,108 +128,60 @@ export default function Stock({ eid, profil, showToast, isAdm, isGer }) {
     setEditProduit(p)
   }
 
-  const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }))
-
-  // ── Filtres ───────────────────────────────────────────────────────────────
   const filt = prods.filter(p =>
     p.nom?.toLowerCase().includes(search.toLowerCase()) ||
     p.categorie?.toLowerCase().includes(search.toLowerCase()) ||
     p.reference?.toLowerCase().includes(search.toLowerCase())
   )
 
-  const mvtFilt = filtreType === 'tous'
-    ? mouvements
-    : mouvements.filter(m => m.type === filtreType)
+  const mvtFilt = filtreType === 'tous' ? mouvements : mouvements.filter(m => m.type === filtreType)
 
-  // ── Formulaire produit ────────────────────────────────────────────────────
-  function ProduitForm({ onSubmit, submitLabel }) {
-    const pr = prCalc()
-    return (
-      <>
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
-          <div style={{ gridColumn:'1/-1' }}>
-            <Field label="Désignation" value={form.nom} onChange={set('nom')} placeholder="Ex: Ciment CFA 50kg" required />
-          </div>
-          <Field label="Référence"  value={form.ref} onChange={set('ref')} placeholder="Ex: CIM-001" />
-          <Field label="Catégorie"  value={form.cat} onChange={set('cat')} placeholder="Ex: Matériaux" />
-          <Field label="Prix d'achat unitaire (FCFA)" type="number" value={form.pa} onChange={set('pa')} placeholder="0" />
-          <Field label="Montant transport (FCFA)"     type="number" value={form.tr} onChange={set('tr')} placeholder="0" />
-          <Field label="Qté totale achetée"           type="number" value={form.qt} onChange={set('qt')} placeholder="0" />
-          <Field label="Seuil d'alerte stock"         type="number" value={form.al} onChange={set('al')} placeholder="10" />
-        </div>
-        <div style={{ background:C.priL, border:`1px solid #93C5FD`, borderRadius:9, padding:'12px 14px', margin:'4px 0 12px' }}>
-          <div style={{ fontSize:12, color:C.pri, fontWeight:600 }}>Prix de revient (calculé)</div>
-          <div style={{ fontSize:20, fontWeight:800, color:C.pri, marginTop:3 }}>
-            {form.qt && parseFloat(form.qt) > 0 ? fmtNum(Math.round(pr)) + ' FCFA' : '—'}
-          </div>
-          <div style={{ fontSize:11, color:C.g500, marginTop:2 }}>PR = Prix achat + Transport ÷ Qté</div>
-        </div>
-        <Field label="Prix de vente (FCFA)" type="number" value={form.pv} onChange={set('pv')} placeholder="0" required />
-        {form.pv && parseFloat(form.pv) > 0 && pr > 0 && (
-          <div style={{ background:C.okL, border:`1px solid #86EFAC`, borderRadius:9, padding:'10px 14px', marginBottom:12 }}>
-            <div style={{ fontSize:12, color:C.ok, fontWeight:600 }}>Marge bénéficiaire</div>
-            <div style={{ fontSize:16, fontWeight:700, color:C.ok, marginTop:2 }}>
-              {Math.round(((parseFloat(form.pv)-pr)/pr)*100)}% · {fmtNum(Math.round(parseFloat(form.pv)-pr))} FCFA/unité
-            </div>
-          </div>
-        )}
-        <div style={{ display:'flex', gap:10, marginTop:8 }}>
-          <button onClick={() => { setShowAdd(false); setEditProduit(null); setForm(EMPTY_PRODUIT) }}
-            style={{ flex:1, padding:11, borderRadius:10, border:`1px solid ${C.g200}`, background:'#fff', cursor:'pointer', fontWeight:600, fontSize:14 }}>
-            Annuler
-          </button>
-          <button onClick={onSubmit} disabled={saving}
-            style={{ flex:1, padding:11, borderRadius:10, border:'none', background:C.pri, color:'#fff', cursor:saving?'not-allowed':'pointer', fontWeight:700, fontSize:14, opacity:saving?0.7:1 }}>
-            {saving ? 'Enregistrement…' : submitLabel}
-          </button>
-        </div>
-      </>
-    )
-  }
-
-  // ── Rendu ─────────────────────────────────────────────────────────────────
   const ONGLETS = [
-    { id:'produits',   label:'📦 Produits',          badge: null },
-    { id:'mouvements', label:'📊 Mouvements',         badge: null },
-    { id:'alertes',    label:'🔔 Alertes',            badge: nbAlertes > 0 ? nbAlertes : null },
+    { id:'produits',   label:'📦 Produits',  badge: null },
+    { id:'mouvements', label:'📊 Mouvements', badge: null },
+    { id:'alertes',    label:'🔔 Alertes',    badge: nbAlertes > 0 ? nbAlertes : null },
   ]
 
   return (
     <div style={{ padding:24 }}>
 
-      {/* Onglets */}
-      <div style={{ display:'flex', gap:4, marginBottom:24, background:'#fff', borderRadius:12, padding:6, border:`1px solid ${C.g200}`, width:'fit-content' }}>
-        {ONGLETS.map(o => (
-          <button key={o.id} onClick={() => setOnglet(o.id)}
-            style={{ padding:'9px 18px', borderRadius:9, border:'none', background:onglet===o.id?C.pri:'transparent', color:onglet===o.id?'#fff':C.g600, fontWeight:onglet===o.id?700:400, fontSize:14, cursor:'pointer', display:'flex', alignItems:'center', gap:6, transition:'all .2s' }}>
-            {o.label}
-            {o.badge && <span style={{ background:C.err, color:'#fff', borderRadius:10, fontSize:11, padding:'1px 7px', fontWeight:700 }}>{o.badge}</span>}
-          </button>
-        ))}
-      </div>
+      {/* Onglets — cachés pour le caissier */}
+      {isGer && (
+        <div style={{ display:'flex', gap:4, marginBottom:24, background:'#fff', borderRadius:12, padding:6, border:`1px solid ${C.g200}`, width:'fit-content' }}>
+          {ONGLETS.map(o => (
+            <button key={o.id} onClick={() => setOnglet(o.id)}
+              style={{ padding:'9px 18px', borderRadius:9, border:'none', background:onglet===o.id?C.pri:'transparent', color:onglet===o.id?'#fff':C.g600, fontWeight:onglet===o.id?700:400, fontSize:14, cursor:'pointer', display:'flex', alignItems:'center', gap:6 }}>
+              {o.label}
+              {o.badge && <span style={{ background:C.err, color:'#fff', borderRadius:10, fontSize:11, padding:'1px 7px', fontWeight:700 }}>{o.badge}</span>}
+            </button>
+          ))}
+        </div>
+      )}
 
-      {/* ── ONGLET PRODUITS ─────────────────────────────────────────────── */}
-      {onglet === 'produits' && (
+      {/* ONGLET PRODUITS */}
+      {(onglet === 'produits' || !isGer) && (
         <>
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16, gap:12 }}>
             <input placeholder="🔍 Rechercher produit, référence, catégorie…"
               value={search} onChange={e => setSearch(e.target.value)}
               style={{ padding:'9px 14px', borderRadius:10, border:`1px solid ${C.g200}`, fontSize:14, flex:1, maxWidth:360 }}
             />
-            <button onClick={() => { setForm(EMPTY_PRODUIT); setShowAdd(true) }}
-              style={{ background:C.pri, color:'#fff', border:'none', borderRadius:10, padding:'10px 18px', fontWeight:600, fontSize:14, cursor:'pointer', whiteSpace:'nowrap' }}>
-              + Nouveau produit
-            </button>
+            {isGer && (
+              <button onClick={() => { setForm(EMPTY_PRODUIT); setShowAdd(true) }}
+                style={{ background:C.pri, color:'#fff', border:'none', borderRadius:10, padding:'10px 18px', fontWeight:600, fontSize:14, cursor:'pointer', whiteSpace:'nowrap' }}>
+                + Nouveau produit
+              </button>
+            )}
           </div>
 
           {loading ? (
             <div style={{ textAlign:'center', padding:60, color:C.g500 }}>Chargement…</div>
           ) : (
             <div style={{ background:'#fff', borderRadius:12, border:`1px solid ${C.g200}`, overflow:'auto' }}>
-              <table style={{ width:'100%', borderCollapse:'collapse', fontSize:14, minWidth:800 }}>
+              <table style={{ width:'100%', borderCollapse:'collapse', fontSize:14, minWidth:700 }}>
                 <thead>
                   <tr style={{ background:C.g50 }}>
-                    {['Produit','Réf.','Catégorie','Prix revient','Prix vente','Marge','Stock','Statut','Actions'].map(h => (
+                    {['Produit','Réf.','Catégorie','Prix vente','Stock','Statut', isGer ? 'Actions' : ''].map(h => (
                       <th key={h} style={{ padding:'12px 12px', textAlign:'left', color:C.g600, fontSize:12, fontWeight:600, whiteSpace:'nowrap' }}>{h}</th>
                     ))}
                   </tr>
@@ -275,37 +198,33 @@ export default function Stock({ eid, profil, showToast, isAdm, isGer }) {
                         <td style={{ padding:'11px 12px' }}>
                           {p.categorie && <span style={{ background:C.priL, color:C.pri, borderRadius:20, padding:'3px 10px', fontSize:12 }}>{p.categorie}</span>}
                         </td>
-                        <td style={{ padding:'11px 12px', color:C.g600 }}>{fmt(p.prix_revient)}</td>
                         <td style={{ padding:'11px 12px', fontWeight:600 }}>{fmt(p.prix_vente)}</td>
-                        <td style={{ padding:'11px 12px', color:C.ok, fontWeight:600 }}>{mg}%</td>
                         <td style={{ padding:'11px 12px', fontWeight:700, color:ep?C.err:al?C.war:C.g800 }}>{fmtNum(p.stock)}</td>
                         <td style={{ padding:'11px 12px' }}>
                           <span style={{ background:ep?C.errL:al?C.warL:C.okL, color:ep?C.err:al?C.war:C.ok, borderRadius:20, padding:'4px 10px', fontSize:12, fontWeight:600 }}>
                             {ep?'🚫 Épuisé':al?'⚠️ Faible':'✅ OK'}
                           </span>
                         </td>
-                        <td style={{ padding:'11px 12px' }}>
-                          <div style={{ display:'flex', gap:5 }}>
-                            {isGer && (
-                              <button onClick={() => setMvtProduit(p)} title="Mouvement de stock"
-                                style={{ width:30, height:30, borderRadius:7, border:`1px solid #86EFAC`, background:C.okL, color:C.ok, cursor:'pointer', fontSize:14, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                        {isGer && (
+                          <td style={{ padding:'11px 12px' }}>
+                            <div style={{ display:'flex', gap:5 }}>
+                              <button onClick={() => setMvtProduit(p)} title="Mouvement"
+                                style={{ width:30, height:30, borderRadius:7, border:'1px solid #86EFAC', background:C.okL, color:C.ok, cursor:'pointer', fontSize:14, display:'flex', alignItems:'center', justifyContent:'center' }}>
                                 📦
                               </button>
-                            )}
-                            {isGer && (
                               <button onClick={() => openEdit(p)} title="Modifier"
                                 style={{ width:30, height:30, borderRadius:7, border:`1px solid ${C.g200}`, background:C.priL, color:C.pri, cursor:'pointer', fontSize:14, display:'flex', alignItems:'center', justifyContent:'center' }}>
                                 ✏️
                               </button>
-                            )}
-                            {isAdm && (
-                              <button onClick={() => setDeleteTarget(p)} title="Supprimer"
-                                style={{ width:30, height:30, borderRadius:7, border:`1px solid #FCA5A5`, background:C.errL, color:C.err, cursor:'pointer', fontSize:14, display:'flex', alignItems:'center', justifyContent:'center' }}>
-                                🗑️
-                              </button>
-                            )}
-                          </div>
-                        </td>
+                              {isAdm && (
+                                <button onClick={() => setDeleteTarget(p)} title="Supprimer"
+                                  style={{ width:30, height:30, borderRadius:7, border:'1px solid #FCA5A5', background:C.errL, color:C.err, cursor:'pointer', fontSize:14, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                                  🗑️
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        )}
                       </tr>
                     )
                   })}
@@ -316,10 +235,9 @@ export default function Stock({ eid, profil, showToast, isAdm, isGer }) {
         </>
       )}
 
-      {/* ── ONGLET MOUVEMENTS ────────────────────────────────────────────── */}
-      {onglet === 'mouvements' && (
+      {/* ONGLET MOUVEMENTS */}
+      {onglet === 'mouvements' && isGer && (
         <>
-          {/* Filtres type */}
           <div style={{ display:'flex', gap:8, marginBottom:16, flexWrap:'wrap' }}>
             {[['tous','Tous'],['entree','📥 Entrées'],['sortie','📤 Sorties'],['inventaire','📋 Inventaire'],['transfert','🔄 Transferts']].map(([k,lb]) => (
               <button key={k} onClick={() => setFiltreType(k)}
@@ -328,7 +246,6 @@ export default function Stock({ eid, profil, showToast, isAdm, isGer }) {
               </button>
             ))}
           </div>
-
           <div style={{ background:'#fff', borderRadius:12, border:`1px solid ${C.g200}`, overflow:'auto' }}>
             {mvtFilt.length === 0 ? (
               <div style={{ textAlign:'center', padding:48, color:C.g500 }}>Aucun mouvement enregistré</div>
@@ -353,9 +270,7 @@ export default function Stock({ eid, profil, showToast, isAdm, isGer }) {
                         <td style={{ padding:'10px 12px' }}>
                           <span style={{ background:t.bg, color:t.color, borderRadius:20, padding:'3px 10px', fontSize:12, fontWeight:600 }}>{t.label}</span>
                         </td>
-                        <td style={{ padding:'10px 12px', fontWeight:700, color:t.color }}>
-                          {t.sign}{fmtNum(m.quantite)}
-                        </td>
+                        <td style={{ padding:'10px 12px', fontWeight:700, color:t.color }}>{t.sign}{fmtNum(m.quantite)}</td>
                         <td style={{ padding:'10px 12px', color:C.g600 }}>{fmtNum(m.stock_avant)}</td>
                         <td style={{ padding:'10px 12px', fontWeight:700, color:m.stock_apres===0?C.err:C.g800 }}>{fmtNum(m.stock_apres)}</td>
                         <td style={{ padding:'10px 12px', color:C.g600, maxWidth:160, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{m.motif||'—'}</td>
@@ -370,18 +285,18 @@ export default function Stock({ eid, profil, showToast, isAdm, isGer }) {
         </>
       )}
 
-      {/* ── ONGLET ALERTES ───────────────────────────────────────────────── */}
-      {onglet === 'alertes' && (
+      {/* ONGLET ALERTES */}
+      {onglet === 'alertes' && isGer && (
         <AlertesStock eid={eid} showToast={showToast} />
       )}
 
-      {/* Modals */}
-      {showAdd && (
+      {/* Modals — gérant/admin uniquement */}
+      {showAdd && isGer && (
         <Modal title="➕ Nouveau produit" onClose={handleCancel} wide>
           <ProduitForm form={form} onChange={handleFormChange} onSubmit={createProduit} onCancel={handleCancel} saving={saving} />
         </Modal>
       )}
-      {editProduit && (
+      {editProduit && isGer && (
         <Modal title={`✏️ Modifier — ${editProduit.nom}`} onClose={handleCancel} wide>
           <ProduitForm form={form} onChange={handleFormChange} onSubmit={updateProduit} onCancel={handleCancel} saving={saving} />
         </Modal>
@@ -393,11 +308,9 @@ export default function Stock({ eid, profil, showToast, isAdm, isGer }) {
           onCancel={() => setDeleteTarget(null)}
         />
       )}
-      {mvtProduit && (
+      {mvtProduit && isGer && (
         <MouvementModal
-          produit={mvtProduit}
-          profil={profil}
-          eid={eid}
+          produit={mvtProduit} profil={profil} eid={eid}
           onClose={() => setMvtProduit(null)}
           onSuccess={reloadAll}
           showToast={showToast}
