@@ -1,27 +1,34 @@
-const C = { pri:'#2563EB', priL:'#EFF6FF', ok:'#16A34A', okL:'#F0FDF4', war:'#D97706', warL:'#FFFBEB', err:'#DC2626', g50:'#F9FAFB', g100:'#F3F4F6', g200:'#E5E7EB', g500:'#6B7280', g600:'#4B5563', g800:'#1F2937' }
+const C = {
+  pri:'#2563EB', priL:'#EFF6FF',
+  ok:'#16A34A',  okL:'#F0FDF4',
+  war:'#D97706', warL:'#FFFBEB',
+  err:'#DC2626',
+  g50:'#F9FAFB', g100:'#F3F4F6', g200:'#E5E7EB',
+  g500:'#6B7280', g600:'#4B5563', g800:'#1F2937'
+}
 
 function Badge({ txt, fg, bg }) {
   return <span style={{ background:bg, color:fg, borderRadius:20, padding:'2px 9px', fontSize:11, fontWeight:600 }}>{txt}</span>
 }
 
-export default function Sidebar({ page, setPage, profil, role, isAdm, isGer, onSignOut }) {
+export default function Sidebar({ page, setPage, profil, role, isAdm, isGer, isCai, onSignOut }) {
   const entNom = profil?.entreprises?.nom || 'Mon Entreprise'
   const nom    = profil?.nom || ''
 
   const navItems = [
-    { id:'dashboard',  ic:'📊', lb:'Tableau de bord', show: true },
-    { id:'vente',      ic:'🛒', lb:'Vente rapide',     show: true },
-    { id:'stock',      ic:'📦', lb:'Stock',            show: isGer },
-    { id:'clients',    ic:'👥', lb:'Clients',          show: isGer },
-    { id:'historique', ic:'📋', lb:'Historique',       show: isGer },
-    { id:'rapports',   ic:'📈', lb:'Rapports',         show: isGer },
-    { id:'users',      ic:'👤', lb:'Utilisateurs',     show: isAdm },
-    { id:'abonnement', ic:'💳', lb:'Abonnement',       show: isAdm },
+    { id:'dashboard',  ic:'📊', lb:'Tableau de bord', show: true    },
+    { id:'vente',      ic:'🛒', lb:'Vente rapide',     show: true    },
+    { id:'stock',      ic:'📦', lb:'Stock',            show: true    },
+    { id:'clients',    ic:'👥', lb:'Clients',          show: true    },
+    { id:'historique', ic:'📋', lb:'Historique',       show: isGer   },
+    { id:'rapports',   ic:'📈', lb:'Rapports',         show: isGer   },
+    { id:'users',      ic:'👤', lb:'Utilisateurs',     show: isAdm   },
+    { id:'abonnement', ic:'💳', lb:'Abonnement',       show: isAdm   },
   ].filter(n => n.show)
 
   function bdgRole(r) {
-    const fg = r==='admin'?C.pri:r==='gerant'?C.war:C.ok
-    const bg = r==='admin'?C.priL:r==='gerant'?C.warL:C.okL
+    const fg = r==='admin' ? C.pri : r==='gerant' ? C.war : C.ok
+    const bg = r==='admin' ? C.priL : r==='gerant' ? C.warL : C.okL
     return <Badge txt={r} fg={fg} bg={bg}/>
   }
 

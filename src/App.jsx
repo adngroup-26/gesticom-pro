@@ -15,17 +15,16 @@ import Abonnement from './pages/Abonnement'
 
 export default function App() {
   const [session, setSession] = useState(null)
-  const [profil, setProfil]   = useState(null)
+  const [profil,  setProfil]  = useState(null)
   const [loading, setLoading] = useState(true)
-  const [page, setPage]       = useState('dashboard')
-  const [toast, setToast]     = useState(null)
+  const [page,    setPage]    = useState('dashboard')
+  const [toast,   setToast]   = useState(null)
 
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type })
     setTimeout(() => setToast(null), 3500)
   }
 
-  // Charger session au démarrage
   useEffect(() => {
     sb.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
@@ -86,7 +85,7 @@ export default function App() {
       <Sidebar
         page={page} setPage={setPage}
         profil={profil} role={role}
-        isAdm={isAdm} isGer={isGer}
+        isAdm={isAdm} isGer={isGer} isCai={isCai}
         onSignOut={signOut}
       />
       <main style={{ flex:1, overflow:'auto' }}>
