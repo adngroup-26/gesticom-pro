@@ -1,13 +1,17 @@
-import { memo, useCallback } from 'react'
+import { memo, useCallback, useEffect } from 'react'
 
 const C = {
   pri: '#2563EB',
   err: '#DC2626',
-  g200: '#E5E7EB', g500: '#6B7280', g600: '#4B5563'
+  g200: '#E5E7EB', g600: '#4B5563'
 }
 
-// ── Field stable ──────────────────────────────────────────────────────────────
 const Field = memo(function Field({ label, value, onChange, type = 'text', placeholder }) {
+  useEffect(() => {
+    console.log('FIELD MOUNT:', label)
+    return () => console.log('FIELD UNMOUNT:', label)
+  }, [])
+
   return (
     <div style={{ marginBottom: 14 }}>
       <label style={{ fontSize: 13, color: C.g600, fontWeight: 500, display: 'block', marginBottom: 4 }}>
@@ -26,9 +30,14 @@ const Field = memo(function Field({ label, value, onChange, type = 'text', place
   )
 })
 
-// ── ClientForm — composant EXTERNE et stable ──────────────────────────────────
 const ClientForm = memo(function ClientForm({ form, onChange, onSubmit, onCancel, saving }) {
-  // Handlers stables — ne changent pas entre les renders
+  console.log('FORM RENDER — ClientForm')
+
+  useEffect(() => {
+    console.log('FORM MOUNT — ClientForm')
+    return () => console.log('FORM UNMOUNT — ClientForm')
+  }, [])
+
   const handleNom     = useCallback(e => onChange('nom',     e.target.value), [onChange])
   const handleTel     = useCallback(e => onChange('tel',     e.target.value), [onChange])
   const handleAdresse = useCallback(e => onChange('adresse', e.target.value), [onChange])

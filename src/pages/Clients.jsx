@@ -154,29 +154,6 @@ export default function Clients({ eid, showToast }) {
     c.telephone?.includes(search)
   )
 
-  // ── Formulaire partagé ────────────────────────────────────────────────────
-  function ClientForm({ onSubmit, submitLabel }) {
-    return (
-      <>
-        <Field label="Nom complet *"  value={form.nom}     onChange={set('nom')}     placeholder="Ex: Kouassi Julien" />
-        <Field label="Téléphone"      value={form.tel}     onChange={set('tel')}     placeholder="+225 07 XX XX XX" type="tel" />
-        <Field label="Adresse"        value={form.adresse} onChange={set('adresse')} placeholder="Quartier, Ville" />
-        <Field label="Email"          value={form.email}   onChange={set('email')}   placeholder="client@email.com" type="email" />
-        <div style={{ display:'flex', gap:10, marginTop:8 }}>
-          <button
-            onClick={() => { setShowAdd(false); setEditClient(null); setForm(EMPTY_CLIENT) }}
-            style={{ flex:1, padding:11, borderRadius:10, border:`1px solid ${C.g200}`, background:'#fff', cursor:'pointer', fontWeight:600, fontSize:14 }}>
-            Annuler
-          </button>
-          <button onClick={onSubmit} disabled={saving}
-            style={{ flex:1, padding:11, borderRadius:10, border:'none', background:C.pri, color:'#fff', cursor:saving?'not-allowed':'pointer', fontWeight:700, fontSize:14, opacity:saving?0.7:1 }}>
-            {saving ? 'Enregistrement…' : submitLabel}
-          </button>
-        </div>
-      </>
-    )
-  }
-
   // ── Rendu ─────────────────────────────────────────────────────────────────
   return (
     <div style={{ padding:24 }}>
