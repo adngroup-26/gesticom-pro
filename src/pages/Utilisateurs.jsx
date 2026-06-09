@@ -4,13 +4,16 @@ import { sb } from '../supabase'
 const C = { pri:'#2563EB', priL:'#EFF6FF', ok:'#16A34A', okL:'#F0FDF4', err:'#DC2626', errL:'#FEF2F2', war:'#D97706', warL:'#FFFBEB', g50:'#F9FAFB', g100:'#F3F4F6', g200:'#E5E7EB', g500:'#6B7280', g600:'#4B5563', g800:'#1F2937' }
 
 const PERMS = [
-  ['Effectuer une vente',    true,  true,  true ],
-  ['Gérer le stock',         true,  true,  false],
-  ['Voir les rapports',      true,  true,  false],
-  ['Gérer les clients',      true,  true,  false],
-  ['Inviter des utilisateurs',true, false, false],
-  ['Supprimer des données',  true,  false, false],
-  ['Gérer l\'abonnement',    true,  false, false],
+  ['Effectuer une vente',          true,  true,  true ],
+  ['Voir les articles',            true,  true,  true ],
+  ['Ajouter/modifier un client',   true,  true,  true ],
+  ['Gérer le stock',               true,  true,  false],
+  ['Mouvements de stock',          true,  true,  false],
+  ['Voir les rapports',            true,  true,  false],
+  ['Voir l\'historique des ventes',true,  true,  false],
+  ['Inviter des utilisateurs',     true,  false, false],
+  ['Supprimer des données',        true,  false, false],
+  ['Gérer l\'abonnement',          true,  false, false],
 ]
 
 function Badge({ txt, fg, bg }) {
