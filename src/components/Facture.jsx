@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { sb } from '../supabase'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import TicketImpression from './TicketImpression'
 
 const C = { pri:'#2563EB', priL:'#EFF6FF', ok:'#16A34A', g200:'#E5E7EB', g500:'#6B7280', g800:'#1F2937' }
 
@@ -202,7 +203,9 @@ function genererPDF(data, ventesIndex) {
 
 // ── Composant React ───────────────────────────────────────────────────────────
 export default function Facture({ data, onClose, showToast }) {
-  const [ventesIndex, setVentesIndex] = useState(0)
+  const [ventesIndex,  setVentesIndex]  = useState(0)
+  const [showTicket,   setShowTicket]   = useState(false)
+  const [entreprise,   setEntreprise]   = useState(null)
 
   useEffect(() => {
     async function fetchIndex() {
@@ -216,6 +219,14 @@ export default function Facture({ data, onClose, showToast }) {
       } catch(e) { setVentesIndex(0) }
     }
     if (data?.created_at) fetchIndex()
+
+    // Charger les infos entreprise pour le ticket thermique
+    async function fetchEntreprise() {
+      if (!data?.entreprise_id) return
+      const { data: ent } = await sb.from('entreprises').select('*').eq('id', data.entreprise_id).single()
+      setEntreprise(ent)
+    }
+    fetchEntreprise()
   }, [data])
 
   function handlePDF() {
@@ -246,6 +257,7 @@ export default function Facture({ data, onClose, showToast }) {
   }
 
   return (
+    <>
     <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center' }}>
       <div style={{ background:'#fff', borderRadius:16, padding:32, width:480, maxWidth:'92vw', maxHeight:'90vh', overflowY:'auto' }}>
 
@@ -316,11 +328,25 @@ export default function Facture({ data, onClose, showToast }) {
             💬 Envoyer WhatsApp
           </button>
         </div>
+        <button onClick={() => setShowTicket(true)}
+          style={{ width:'100%', padding:12, background:'#1F2937', color:'#fff', border:'none', borderRadius:10, fontWeight:700, cursor:'pointer', fontSize:14, marginBottom:10 }}>
+          🖨️ Imprimer reçu thermique 80mm
+        </button>
         <button onClick={onClose}
           style={{ width:'100%', padding:10, background:'#fff', border:`1px solid ${C.g200}`, borderRadius:10, cursor:'pointer', color:C.g500, fontSize:13 }}>
           Fermer
         </button>
       </div>
     </div>
+
+    {/* Ticket thermique */}
+    {showTicket && (
+      <TicketImpression
+        data={data}
+        entreprise={entreprise || { nom: data.entreprise_nom }}
+        onClose={() => setShowTicket(false)}
+      />
+    )}
+  </>
   )
 }

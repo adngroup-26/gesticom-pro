@@ -1,0 +1,82 @@
+/* ============================================================
+   GESTICOM PRO — Styles impression thermique 80mm
+   ============================================================ */
+
+@media print {
+  /* Masquer tout sauf le ticket */
+  body > * { display: none !important; }
+  #thermal-ticket { display: block !important; }
+
+  /* Format papier 80mm */
+  @page {
+    width: 80mm;
+    margin: 0;
+    padding: 0;
+  }
+
+  #thermal-ticket {
+    width: 80mm;
+    max-width: 80mm;
+    margin: 0;
+    padding: 4mm;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 11px;
+    line-height: 1.4;
+    color: #000;
+    background: #fff;
+  }
+}
+
+/* Aperçu à l'écran */
+#thermal-ticket {
+  display: none;
+  width: 80mm;
+  max-width: 80mm;
+  margin: 0 auto;
+  padding: 4mm;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 11px;
+  line-height: 1.5;
+  color: #000;
+  background: #fff;
+}
+
+#thermal-ticket.preview {
+  display: block;
+}
+
+/* Séparateurs */
+.th-sep  { border-top: 1px dashed #000; margin: 3px 0; }
+.th-sep2 { border-top: 2px solid #000;  margin: 3px 0; }
+
+/* Centrage */
+.th-center { text-align: center; }
+.th-bold   { font-weight: bold; }
+.th-large  { font-size: 13px; font-weight: bold; }
+.th-small  { font-size: 10px; }
+
+/* Ligne article */
+.th-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+}
+.th-row .th-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 38mm;
+}
+.th-row .th-qty  { width: 8mm;  text-align: center; }
+.th-row .th-pu   { width: 16mm; text-align: right; }
+.th-row .th-tot  { width: 18mm; text-align: right; font-weight: bold; }
+
+/* Total */
+.th-total {
+  display: flex;
+  justify-content: space-between;
+  font-weight: bold;
+  font-size: 13px;
+  margin: 4px 0;
+}
