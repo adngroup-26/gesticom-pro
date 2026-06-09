@@ -78,7 +78,7 @@ export default function App() {
   const eid   = profil?.entreprise_id
 
   const pages = {
-    dashboard:  <Dashboard eid={eid} showToast={showToast} />,
+    dashboard:  <Dashboard eid={eid} showToast={showToast} isGer={isGer} />,
     vente:      <Vente eid={eid} profil={profil} showToast={showToast} />,
     stock:      <Stock eid={eid} profil={profil} showToast={showToast} isAdm={isAdm} isGer={isGer} />,
     clients:    <Clients eid={eid} showToast={showToast} isAdm={isAdm} />,

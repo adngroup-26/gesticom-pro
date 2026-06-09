@@ -26,13 +26,25 @@ export default function Vente({ eid, profil, showToast }) {
   }
 
   function addCart(p) {
-    if (p.stock <= 0) return
+    if (p.stock <= 0) { showToast('Stock épuisé pour ' + p.nom, 'error'); return }
     setPanier(prev => {
       const ex = prev.find(x => x.id === p.id)
-      if (ex) return prev.map(x => x.id === p.id ? { ...x, qty: x.qty + 1 } : x)
+      if (ex) {
+        if (ex.qty >= p.stock) { showToast('Stock insuffisant — max ' + p.stock + ' unité(s)', 'error'); return prev }
+        return prev.map(x => x.id === p.id ? { ...x, qty: x.qty + 1 } : x)
+      }
       return [...prev, { ...p, qty: 1 }]
     })
     showToast(p.nom + ' ajouté')
+  }
+
+  function updQty(id, qty) {
+    if (qty < 1) return rmCart(id)
+    setPanier(prev => prev.map(x => {
+      if (x.id !== id) return x
+      if (qty > x.stock) { showToast('Stock insuffisant — max ' + x.stock + ' unité(s)', 'error'); return x }
+      return { ...x, qty }
+    }))
   }
 
   function rmCart(id) { setPanier(p => p.filter(x => x.id !== id)) }
