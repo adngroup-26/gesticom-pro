@@ -45,6 +45,15 @@ export default function App() {
       .select('*, entreprises(*)')
       .eq('auth_user_id', uid)
       .single()
+    if (data && !data.entreprises && data.entreprise_id) {
+      // Charger l'entreprise séparément si la jointure a échoué
+      const { data: ent } = await sb
+        .from('entreprises')
+        .select('*')
+        .eq('id', data.entreprise_id)
+        .single()
+      data.entreprises = ent
+    }
     setProfil(data)
     setLoading(false)
   }
