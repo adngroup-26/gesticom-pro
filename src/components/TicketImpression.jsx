@@ -9,6 +9,21 @@ function fmtT(n) {
     .replace(/\u00A0/g, ' ')
 }
 
+// ── Alignement colonne monospace ──────────────────────────────────────────────
+function pad(str, len, right) {
+  const s = String(str || '').substring(0, len)
+  return right ? s.padStart(len, ' ') : s.padEnd(len, ' ')
+}
+
+function formatLigne(nom, qty, pu, total) {
+  // Format fixe : 16 nom | 4 qte | 9 pu | 9 total = 38 chars
+  const n = pad(nom,   16, false)
+  const q = pad(qty,    4, true)
+  const p = pad(fmtT(pu),   9, true)
+  const t = pad(fmtT(total), 9, true)
+  return n + q + p + t
+}
+
 // ── Tronquer le texte pour 80mm ───────────────────────────────────────────────
 function trunc(str, max) {
   if (!str) return ''
@@ -73,24 +88,15 @@ export default function TicketImpression({ data, entreprise, ventesIndex, onClos
         <div className="th-sep"/>
 
         {/* En-tête colonnes */}
-        <div className="th-row th-bold">
-          <span className="th-name">Designation</span>
-          <span className="th-qty">Qte</span>
-          <span className="th-pu">P.U</span>
-          <span className="th-tot">Total</span>
-        </div>
+        <div className="th-bold">{pad('Designation',16) + pad('Qte',4,true) + pad('P.U',9,true) + pad('Total',9,true)}</div>
         <div className="th-sep"/>
 
         {/* Articles */}
         {lignes.map((l, i) => (
           <div key={i}>
-            {/* Nom sur ligne séparée si trop long */}
-            {l.nom.length > 20 && <div className="th-small">{trunc(l.nom, 30)}</div>}
-            <div className="th-row">
-              <span className="th-name">{l.nom.length > 20 ? '' : trunc(l.nom, 20)}</span>
-              <span className="th-qty">{l.qty}</span>
-              <span className="th-pu">{fmtT(l.pu)}</span>
-              <span className="th-tot">{fmtT(l.total)}</span>
+            {l.nom.length > 16 && <div className="th-small">{trunc(l.nom, 30)}</div>}
+            <div style={{ whiteSpace:'pre' }}>
+              {formatLigne(l.nom.length > 16 ? '' : l.nom, l.qty, l.pu, l.total)}
             </div>
           </div>
         ))}
@@ -99,7 +105,7 @@ export default function TicketImpression({ data, entreprise, ventesIndex, onClos
         {/* Total */}
         <div className="th-total">
           <span>TOTAL</span>
-          <span>{fmtT(montant_total)} F</span>
+          <span>{fmtT(montant_total)} FCFA</span>
         </div>
         <div className="th-sep2"/>
 
@@ -135,25 +141,22 @@ export default function TicketImpression({ data, entreprise, ventesIndex, onClos
             <div>Date    : {dateStr}</div>
             <div>Client  : {trunc(client_nom || 'Direct', 24)}</div>
             <div style={{ borderTop:'1px dashed #000', margin:'4px 0' }}/>
-            <div style={{ display:'flex', justifyContent:'space-between', fontWeight:'bold' }}>
-              <span style={{ flex:1 }}>Designation</span>
-              <span style={{ width:30, textAlign:'center' }}>Qte</span>
-              <span style={{ width:60, textAlign:'right' }}>P.U</span>
-              <span style={{ width:65, textAlign:'right' }}>Total</span>
+            <div style={{ fontWeight:'bold', whiteSpace:'pre', fontFamily:'Courier New, monospace', fontSize:11 }}>
+              {pad('Designation',16) + pad('Qte',4,true) + pad('P.U',9,true) + pad('Total',9,true)}
             </div>
             <div style={{ borderTop:'1px dashed #000', margin:'4px 0' }}/>
             {lignes.map((l, i) => (
-              <div key={i} style={{ display:'flex', justifyContent:'space-between' }}>
-                <span style={{ flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:120 }}>{l.nom}</span>
-                <span style={{ width:30, textAlign:'center' }}>{l.qty}</span>
-                <span style={{ width:60, textAlign:'right' }}>{fmtT(l.pu)}</span>
-                <span style={{ width:65, textAlign:'right', fontWeight:'bold' }}>{fmtT(l.total)}</span>
+              <div key={i}>
+                {l.nom.length > 16 && <div style={{ fontSize:10 }}>{trunc(l.nom, 30)}</div>}
+                <div style={{ whiteSpace:'pre', fontFamily:'Courier New, monospace', fontSize:11 }}>
+                  {formatLigne(l.nom.length > 16 ? '' : l.nom, l.qty, l.pu, l.total)}
+                </div>
               </div>
             ))}
             <div style={{ borderTop:'1px dashed #000', margin:'4px 0' }}/>
             <div style={{ display:'flex', justifyContent:'space-between', fontWeight:'bold', fontSize:13 }}>
               <span>TOTAL</span>
-              <span>{fmtT(montant_total)} F</span>
+              <span>{fmtT(montant_total)} FCFA</span>
             </div>
             <div style={{ borderTop:'2px solid #000', margin:'4px 0' }}/>
             {msgMerci.split('\n').map((line, i) => (
