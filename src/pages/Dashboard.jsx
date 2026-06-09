@@ -5,7 +5,7 @@ const C = { pri:'#2563EB', priL:'#EFF6FF', ok:'#16A34A', okL:'#F0FDF4', err:'#DC
 const fmt = n => (n||0).toLocaleString('fr-FR') + ' FCFA'
 const today = new Date().toISOString().slice(0,10)
 
-export default function Dashboard({ eid }) {
+export default function Dashboard({ eid, isGer }) {
   const [prods,  setProds]  = useState([])
   const [ventes, setVentes] = useState([])
   const [clis,   setClis]   = useState([])
@@ -32,12 +32,14 @@ export default function Dashboard({ eid }) {
   const todayV   = ventes.filter(v => v.created_at?.slice(0,10) === today).reduce((s,v) => s + v.montant_total, 0)
 
   const kpis = [
-    { lb:'Ventes du jour', v:fmt(todayV), ic:'💰', c:C.pri },
-    { lb:'CA total',       v:fmt(totV),   ic:'📊', c:'#7C3AED' },
-    { lb:'Bénéfice total', v:fmt(totB),   ic:'📈', c:C.ok },
-    { lb:'Produits',       v:prods.length, ic:'📦', c:C.war },
-    { lb:'Alertes stock',  v:alerts.length, ic:'⚠️', c:C.err },
-    { lb:'Clients',        v:clis.length,  ic:'👥', c:'#0891B2' },
+    { lb:'Ventes du jour', v:fmt(todayV),    ic:'💰', c:C.pri },
+    ...(isGer ? [
+      { lb:'CA total',     v:fmt(totV),       ic:'📊', c:'#7C3AED' },
+      { lb:'Bénéfice total',v:fmt(totB),      ic:'📈', c:C.ok },
+    ] : []),
+    { lb:'Produits',       v:prods.length,    ic:'📦', c:C.war },
+    { lb:'Alertes stock',  v:alerts.length,   ic:'⚠️', c:C.err },
+    { lb:'Clients',        v:clis.length,     ic:'👥', c:'#0891B2' },
   ]
 
   if (load) return <Spin/>

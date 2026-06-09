@@ -48,9 +48,14 @@ export default function Vente({ eid, profil, showToast }) {
   }
 
   function rmCart(id) { setPanier(p => p.filter(x => x.id !== id)) }
+
   function updQty(id, qty) {
     if (qty < 1) return rmCart(id)
-    setPanier(p => p.map(x => x.id === id ? { ...x, qty } : x))
+    setPanier(prev => prev.map(x => {
+      if (x.id !== id) return x
+      if (qty > x.stock) { showToast('Stock insuffisant — max ' + x.stock + ' unité(s)', 'error'); return x }
+      return { ...x, qty }
+    }))
   }
 
   const totPan = panier.reduce((s,x) => s + x.prix_vente * x.qty, 0)
