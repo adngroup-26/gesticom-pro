@@ -344,6 +344,7 @@ export default function Facture({ data, onClose, showToast }) {
       <TicketImpression
         data={data}
         entreprise={entreprise || { nom: data.entreprise_nom }}
+        ventesIndex={ventesIndex}
         onClose={() => setShowTicket(false)}
       />
     )}

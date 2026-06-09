@@ -20,7 +20,7 @@ function sep(char, len) {
   return char.repeat(len || 32)
 }
 
-export default function TicketImpression({ data, entreprise, onClose }) {
+export default function TicketImpression({ data, entreprise, ventesIndex, onClose }) {
   const ticketRef = useRef(null)
 
   const {
@@ -36,8 +36,8 @@ export default function TicketImpression({ data, entreprise, onClose }) {
     ? new Date(created_at).toLocaleDateString('fr-FR') + ' ' + new Date(created_at).toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' })
     : new Date().toLocaleDateString('fr-FR')
 
-  // Numéro reçu basé sur l'ID
-  const numRecu = id ? 'REC-' + id.substring(0, 8).toUpperCase() : 'REC-000001'
+  // Même numéro que la facture PDF
+  const numRecu = 'REC-' + String((ventesIndex || 0) + 1).padStart(6, '0')
 
   function imprimer() {
     // Rendre le ticket visible pour l'impression
