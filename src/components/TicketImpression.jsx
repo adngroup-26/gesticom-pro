@@ -16,12 +16,13 @@ function pad(str, len, right) {
 }
 
 function formatLigne(nom, qty, pu, total) {
-  // Format fixe : 16 nom | 4 qte | 9 pu | 9 total = 38 chars
-  const n = pad(nom,   16, false)
-  const q = pad(qty,    4, true)
-  const p = pad(fmtT(pu),   9, true)
-  const t = pad(fmtT(total), 9, true)
+  // 42 chars pour imprimante 80mm : 16 nom | 4 qte | 11 pu | 11 total
+  const n = pad(nom,        16, false)
+  const q = pad(qty,         4, true)
+  const p = pad(fmtT(pu),   11, true)
+  const t = pad(fmtT(total), 11, true)
   return n + q + p + t
+
 }
 
 // ── Tronquer le texte pour 80mm ───────────────────────────────────────────────
@@ -88,7 +89,7 @@ export default function TicketImpression({ data, entreprise, ventesIndex, onClos
         <div className="th-sep"/>
 
         {/* En-tête colonnes */}
-        <div className="th-bold">{pad('Designation',16) + pad('Qte',4,true) + pad('P.U',9,true) + pad('Total',9,true)}</div>
+        <div className="th-bold">{pad('Designation',16) + pad('Qte',4,true) + pad('P.U',11,true) + pad('Total',11,true)}</div>
         <div className="th-sep"/>
 
         {/* Articles */}
@@ -142,7 +143,7 @@ export default function TicketImpression({ data, entreprise, ventesIndex, onClos
             <div>Client  : {trunc(client_nom || 'Direct', 24)}</div>
             <div style={{ borderTop:'1px dashed #000', margin:'4px 0' }}/>
             <div style={{ fontWeight:'bold', whiteSpace:'pre', fontFamily:'Courier New, monospace', fontSize:11 }}>
-              {pad('Designation',16) + pad('Qte',4,true) + pad('P.U',9,true) + pad('Total',9,true)}
+              {pad('Designation',16) + pad('Qte',4,true) + pad('P.U',11,true) + pad('Total',11,true)}
             </div>
             <div style={{ borderTop:'1px dashed #000', margin:'4px 0' }}/>
             {lignes.map((l, i) => (
